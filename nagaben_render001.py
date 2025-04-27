@@ -1,7 +1,7 @@
 # 二重変換防止
 from flask import Flask, request, abort
 from linebot.v3.webhook import WebhookHandler
-from linebot.v3.messaging import LineBotApi
+from linebot.v3.messaging import ReplyMessageRequest
 from linebot.v3.exceptions import InvalidSignatureError
 from linebot.v3.models import TextMessage, MessageEvent, TextSendMessage
 from dotenv import load_dotenv
@@ -21,7 +21,7 @@ app = Flask(__name__)
 def home():
     return 'Hello, this is the home page!'
 
-line_bot_api = LineBotApi(LINE_CHANNEL_ACCESS_TOKEN)
+line_bot_api = MessagingApi(LINE_CHANNEL_ACCESS_TOKEN)
 handler = WebhookHandler(LINE_CHANNEL_SECRET)
 
 # --- 長崎弁変換ロジック ---
@@ -217,10 +217,12 @@ def handle_message(event):
     input_text = event.message.text
     dialect_text = to_nagasaki_dialect(input_text)
     line_bot_api.reply_message(
-        event.reply_token,
-        TextSendMessage(text=dialect_text)
+        ReplyMessageRequest(
+            reply_token=event.reply_token,
+            messages=[TextSendMessage(text=dialect_text)]
+        )
     )
-
+    
 # --- 起動 ---
 if __name__ == "__main__":
     app.run(debug=False)

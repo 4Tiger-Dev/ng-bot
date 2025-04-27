@@ -1,7 +1,8 @@
 from flask import Flask, request, abort
 from linebot.v3.webhook import WebhookHandler
+from linebot.v3.webhook.models import MessageEvent  # ←ここ
 from linebot.v3.messaging import MessagingApi, Configuration
-from linebot.v3.messaging.models import TextMessage, ReplyMessageRequest, MessageEvent
+from linebot.v3.messaging.models import TextMessage, ReplyMessageRequest
 from linebot.v3.exceptions import InvalidSignatureError
 from dotenv import load_dotenv
 import os
@@ -62,4 +63,3 @@ def handle_message(event):
 
 if __name__ == "__main__":
     app.run(debug=False, host='0.0.0.0', port=5000)
-    

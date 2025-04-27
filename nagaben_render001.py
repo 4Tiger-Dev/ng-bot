@@ -1,12 +1,12 @@
 from flask import Flask, request, abort
-from linebot.v3.webhook import WebhookHandler
-from linebot.v3.messaging import MessagingApi, Configuration, ReplyMessageRequest
-from linebot.v3.models import TextMessage, MessageEvent, TextSendMessage
-from linebot.v3.exceptions import InvalidSignatureError
+from linebot import LineBotApi, WebhookHandler
+from linebot.models import TextMessage, MessageEvent, TextSendMessage
+from linebot.exceptions import InvalidSignatureError
 from dotenv import load_dotenv
 import re
 import os
 from janome.tokenizer import Tokenizer
+
 
 # 環境変数からLINEの設定情報を取得
 LINE_CHANNEL_ACCESS_TOKEN = os.getenv("LINE_CHANNEL_ACCESS_TOKEN")
@@ -19,12 +19,11 @@ app = Flask(__name__)
 def home():
     return 'Hello, this is the home page!'
 
-# ConfigurationとMessagingApiのインスタンス化
-configuration = Configuration(access_token=LINE_CHANNEL_ACCESS_TOKEN)
-line_bot_api = MessagingApi(configuration)
+line_bot_api = LineBotApi(LINE_CHANNEL_ACCESS_TOKEN)
 handler = WebhookHandler(LINE_CHANNEL_SECRET)
 
 # --- 長崎弁変換ロジック ---
+
 # 長崎弁辞書の読み込み
 dialect_dict = {}
 with open('batten_utf8.txt', encoding='utf-8') as f:
@@ -40,6 +39,7 @@ with open('connect_dict.txt', encoding='utf-8') as f:
         if ' ' in line:
             key, val = line.strip().split(' ', 1)
             connect_dict[key] = val
+
 
 def convert_all(text):
     t = Tokenizer()
@@ -194,6 +194,7 @@ def to_nagasaki_dialect(text):
     return text
 
 # --- LINE webhookエンドポイント ---
+
 @app.route("/webhook", methods=['POST'])
 def webhook():
     # 署名検証
@@ -207,15 +208,14 @@ def webhook():
     return 'OK'
 
 # --- メッセージ受信時の処理 ---
+
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
     input_text = event.message.text
     dialect_text = to_nagasaki_dialect(input_text)
     line_bot_api.reply_message(
-        ReplyMessageRequest(
-            reply_token=event.reply_token,
-            messages=[TextSendMessage(text=dialect_text)]
-        )
+        event.reply_token,
+        TextSendMessage(text=dialect_text)
     )
     
 # --- 起動 ---

@@ -1,60 +1,65 @@
 from flask import Flask, request, abort
-from linebot.v3 import LineBotApi, WebhookHandler  # 変更: v3を使う
-from linebot.models import TextMessage, MessageEvent, TextSendMessage
-from linebot.exceptions import InvalidSignatureError
+from linebot.v3.webhook import WebhookHandler
+from linebot.v3.messaging import MessagingApi, Configuration
+from linebot.v3.messaging.models import TextMessage, ReplyMessageRequest, MessageEvent
+from linebot.v3.exceptions import InvalidSignatureError
 from dotenv import load_dotenv
 import os
 from janome.tokenizer import Tokenizer
 
-# 環境変数からLINEの設定情報を取得
+# 環境変数をロード
+load_dotenv()
+
 LINE_CHANNEL_ACCESS_TOKEN = os.getenv("LINE_CHANNEL_ACCESS_TOKEN")
 LINE_CHANNEL_SECRET = os.getenv("LINE_CHANNEL_SECRET")
 
+# Flaskアプリケーション
 app = Flask(__name__)
 
-# '/' パスへのルート
+# LINE Bot設定 (v3仕様)
+configuration = Configuration(access_token=LINE_CHANNEL_ACCESS_TOKEN)
+line_bot_api = MessagingApi(configuration)
+handler = WebhookHandler(LINE_CHANNEL_SECRET)
+
+# 形態素解析器
+tokenizer = Tokenizer()
+
+def kaiseki(text):
+    result = []
+    for token in tokenizer.tokenize(text):
+        surface = token.surface
+        part_of_speech = token.part_of_speech
+        result.append(f"{surface}\t{part_of_speech}")
+    return '\n'.join(result)
+
 @app.route('/')
 def home():
     return 'Hello, this is the home page!'
 
-line_bot_api = LineBotApi(LINE_CHANNEL_ACCESS_TOKEN)
-handler = WebhookHandler(LINE_CHANNEL_SECRET)
-
-# 形態素解析器を作成
-tokenizer = Tokenizer()
-
-def kaiseki(text):
-    # 解析結果を格納するリスト
-    result = []
-    for token in tokenizer.tokenize(text):
-        surface = token.surface  # 表層形（実際に表示されている単語）
-        part_of_speech = token.part_of_speech  # 品詞情報
-        result.append(f"{surface}\t{part_of_speech}")
-    return '\n'.join(result)  # 結果を改行区切りで返す
-
-# --- LINE webhookエンドポイント ---
-@app.route("/webhook", methods=['POST'])
+@app.route('/webhook', methods=['POST'])
 def webhook():
-    # 署名検証
-    signature = request.headers['X-Line-Signature']
+    signature = request.headers.get('X-Line-Signature')
     body = request.get_data(as_text=True)
 
     try:
         handler.handle(body, signature)
     except InvalidSignatureError:
         abort(400)
+
     return 'OK'
 
-# --- メッセージ受信時の処理 ---
-@handler.add(MessageEvent, message=TextMessage)
+@handler.add(MessageEvent)
 def handle_message(event):
-    input_text = event.message.text
-    dialect_text = kaiseki(input_text)
-    line_bot_api.reply_message(
-        event.reply_token,
-        TextSendMessage(text=dialect_text)
-    )
-    
-# --- 起動 ---
+    if isinstance(event.message, TextMessage):
+        input_text = event.message.text
+        dialect_text = kaiseki(input_text)
+
+        reply = ReplyMessageRequest(
+            reply_token=event.reply_token,
+            messages=[TextMessage(text=dialect_text)]
+        )
+        line_bot_api.reply_message(reply)
+
 if __name__ == "__main__":
-    app.run(debug=False, host='0.0.0.0', port=5000)  # Render向けにポート指定
+    app.run(debug=False, host='0.0.0.0', port=5000)
+    

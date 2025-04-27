@@ -1,27 +1,25 @@
-# 二重変換防止
 from flask import Flask, request, abort
-from linebot.v3.webhook import WebhookHandler
-from linebot.v3.messaging import ReplyMessageRequest
-from linebot.v3.exceptions import InvalidSignatureError
-from linebot.v3.models import TextMessage, MessageEvent, TextSendMessage
 from dotenv import load_dotenv
-import re
-import os
 from janome.tokenizer import Tokenizer
+import os
+import re
 
+# LINE SDK
+from linebot.v3 import WebhookHandler, Configuration, ApiClient
+from linebot.v3.messaging import MessagingApi, ReplyMessageRequest, TextMessage
+from linebot.v3.webhooks import MessageEvent, TextMessageContent
+from linebot.v3.exceptions import InvalidSignatureError
 
-# 環境変数からLINEの設定情報を取得
+# 環境変数を読み込み
+load_dotenv()
 LINE_CHANNEL_ACCESS_TOKEN = os.getenv("LINE_CHANNEL_ACCESS_TOKEN")
 LINE_CHANNEL_SECRET = os.getenv("LINE_CHANNEL_SECRET")
 
+# Flaskアプリケーション
 app = Flask(__name__)
 
-# '/' パスへのルート
-@app.route('/')
-def home():
-    return 'Hello, this is the home page!'
-
-line_bot_api = MessagingApi(LINE_CHANNEL_ACCESS_TOKEN)
+# LINE API設定
+configuration = Configuration(access_token=LINE_CHANNEL_ACCESS_TOKEN)
 handler = WebhookHandler(LINE_CHANNEL_SECRET)
 
 # --- 長崎弁変換ロジック ---
@@ -34,7 +32,7 @@ with open('batten_utf8.txt', encoding='utf-8') as f:
             key, val = line.strip().split(' ', 1)
             dialect_dict[key] = val
 
-# 連結辞書の読み込み（新規）
+# 連結辞書の読み込み
 connect_dict = {}
 with open('connect_dict.txt', encoding='utf-8') as f:
     for line in f:
@@ -42,13 +40,10 @@ with open('connect_dict.txt', encoding='utf-8') as f:
             key, val = line.strip().split(' ', 1)
             connect_dict[key] = val
 
-
-
 def convert_all(text):
     t = Tokenizer()
     tokens = list(t.tokenize(text, wakati=False))
 
-    # 形態素解析の結果をtokens_infoリストに格納
     tokens_info = []
     for token in tokens:
         features = token.part_of_speech.split(',')
@@ -119,7 +114,6 @@ def convert_all(text):
         ):
             base = t1['surface']
 
-            # 「みる」以降を連結して辞書マッチング
             after_miru = t3['surface']
             if t4: after_miru += t4['surface']
             if t5: after_miru += t5['surface']
@@ -127,22 +121,22 @@ def convert_all(text):
             matched = None
             used = 0
 
-            if after_miru[:3] in connect_dict:  # まず3文字見る
+            if after_miru[:3] in connect_dict:
                 matched = after_miru[:3]
-                used = 2  # t3, t4使用
-            elif after_miru[:2] in connect_dict:  # 次に2文字見る
+                used = 2
+            elif after_miru[:2] in connect_dict:
                 matched = after_miru[:2]
-                used = 1  # t3使用
-            elif after_miru[:1] in connect_dict:  # 最後に1文字
+                used = 1
+            elif after_miru[:1] in connect_dict:
                 matched = after_miru[:1]
-                used = 0  # t3のみ使用
+                used = 0
 
             if matched:
                 result.append(base + 'て' + connect_dict[matched])
                 i += 3 + used
                 continue
             else:
-                result.append(base + 'てむっ')  # デフォルト
+                result.append(base + 'てむっ')
                 i += 3
             continue
 
@@ -196,11 +190,14 @@ def to_nagasaki_dialect(text):
     text = text.replace('[[', '').replace(']]', '')
     return text
 
-# --- LINE webhookエンドポイント ---
+# --- ルート確認 ---
+@app.route('/')
+def home():
+    return 'Hello, this is the home page!'
 
+# --- webhookエンドポイント ---
 @app.route("/webhook", methods=['POST'])
 def webhook():
-    # 署名検証
     signature = request.headers['X-Line-Signature']
     body = request.get_data(as_text=True)
 
@@ -210,19 +207,21 @@ def webhook():
         abort(400)
     return 'OK'
 
-# --- メッセージ受信時の処理 ---
-
-@handler.add(MessageEvent, message=TextMessage)
+# --- メッセージ受信時 ---
+@handler.add(MessageEvent, message=TextMessageContent)
 def handle_message(event):
     input_text = event.message.text
     dialect_text = to_nagasaki_dialect(input_text)
-    line_bot_api.reply_message(
-        ReplyMessageRequest(
-            reply_token=event.reply_token,
-            messages=[TextSendMessage(text=dialect_text)]
+
+    with ApiClient(configuration) as api_client:
+        messaging_api = MessagingApi(api_client)
+        messaging_api.reply_message(
+            ReplyMessageRequest(
+                reply_token=event.reply_token,
+                messages=[TextMessage(text=dialect_text)]
+            )
         )
-    )
-    
-# --- 起動 ---
+
+# --- アプリ起動 ---
 if __name__ == "__main__":
     app.run(debug=False)

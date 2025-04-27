@@ -1,6 +1,7 @@
 # 二重変換防止
 from flask import Flask, request, abort
-from linebot import LineBotApi, WebhookHandler
+from linebot.v3 import LineBotApi
+from linebot.v3.webhook import WebhookHandler
 from linebot.exceptions import InvalidSignatureError
 from linebot.models import MessageEvent, TextMessage, TextSendMessage
 from dotenv import load_dotenv
@@ -222,4 +223,4 @@ def handle_message(event):
 
 # --- 起動 ---
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+    app.run(debug=False)

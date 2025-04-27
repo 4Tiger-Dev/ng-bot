@@ -1,9 +1,8 @@
 # 二重変換防止
 from flask import Flask, request, abort
-from linebot.v3 import LineBotApi
 from linebot.v3.webhook import WebhookHandler
-from linebot.exceptions import InvalidSignatureError
-from linebot.models import MessageEvent, TextMessage, TextSendMessage
+from linebot.v3.messaging import MessagingApi
+from linebot.v3.models import TextMessage, MessageEvent, TextSendMessage
 from dotenv import load_dotenv
 import re
 import os

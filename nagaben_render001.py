@@ -1,9 +1,8 @@
 from flask import Flask, request, abort
-from linebot import LineBotApi, WebhookHandler
+from linebot.v3 import LineBotApi, WebhookHandler  # 変更: v3を使う
 from linebot.models import TextMessage, MessageEvent, TextSendMessage
 from linebot.exceptions import InvalidSignatureError
 from dotenv import load_dotenv
-import re
 import os
 from janome.tokenizer import Tokenizer
 
@@ -58,4 +57,4 @@ def handle_message(event):
     
 # --- 起動 ---
 if __name__ == "__main__":
-    app.run(debug=False, host='0.0.0.0', port=5000)
+    app.run(debug=False, host='0.0.0.0', port=5000)  # Render向けにポート指定

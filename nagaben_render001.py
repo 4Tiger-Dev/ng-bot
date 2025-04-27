@@ -15,6 +15,11 @@ LINE_CHANNEL_SECRET = os.getenv("LINE_CHANNEL_SECRET")
 
 app = Flask(__name__)
 
+# '/' パスへのルート
+@app.route('/')
+def home():
+    return 'Hello, this is the home page!'
+
 line_bot_api = LineBotApi(LINE_CHANNEL_ACCESS_TOKEN)
 handler = WebhookHandler(LINE_CHANNEL_SECRET)
 

@@ -20,9 +20,15 @@ LINE_CHANNEL_SECRET = os.getenv("LINE_CHANNEL_SECRET")
 app = Flask(__name__)
 
 # LINE Bot設定 (v3仕様)
-configuration = Configuration(access_token=LINE_CHANNEL_ACCESS_TOKEN)
-line_bot_api = MessagingApi(configuration)
-handler = WebhookHandler(LINE_CHANNEL_SECRET)
+line_bot_api = None
+handler = None
+
+@app.before_first_request
+def init_linebot():
+    global line_bot_api, handler
+    configuration = Configuration(access_token=LINE_CHANNEL_ACCESS_TOKEN)
+    line_bot_api = MessagingApi(configuration)
+    handler = WebhookHandler(LINE_CHANNEL_SECRET)
 
 # 形態素解析器
 #tokenizer = Tokenizer()

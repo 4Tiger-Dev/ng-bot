@@ -2,7 +2,7 @@ from flask import Flask, request, abort
 from linebot.v3.webhook import WebhookHandler, MessageEvent  # ←ここ
 from linebot.v3.messaging import MessagingApi, Configuration
 from linebot.v3.messaging.models import TextMessage, ReplyMessageRequest
-from linebot.v3.exceptions import InvalidSignatureError
+from linebot.v3.exceptions import InvalidSignatureError, LineBotApiError
 from dotenv import load_dotenv
 import os
 from janome.tokenizer import Tokenizer
@@ -22,13 +22,11 @@ line_bot_api = MessagingApi(configuration)
 handler = WebhookHandler(LINE_CHANNEL_SECRET)
 
 # 形態素解析器
-tokenizer = Tokenizer()
-
-def test(text):
-    return f"あなたが送ったのは「{text}」ですね！"
-    
+#tokenizer = Tokenizer()
 
 def kaiseki(text):
+    tokenizer = Tokenizer()
+
     result = []
     for token in tokenizer.tokenize(text):
         surface = token.surface
@@ -61,12 +59,15 @@ def handle_message(event):
         print("input_message")
         dialect_text = test(input_text)
 
-        reply = ReplyMessageRequest(
+        reply_request = ReplyMessageRequest(
             reply_token=event.reply_token,
             messages=[TextMessage(text=dialect_text)]
         )
-        print("Replying:")
-        line_bot_api.reply_message(reply)
+        try:
+            line_bot_api.reply_message_with_http_info(reply_request)
+            print("Reply sent!")  # 成功したら出す
+        except LineBotApiError as e:
+            print(f"Reply failed: {e}")  # エラー内容だけ簡単にログ
 
 #if __name__ == "__main__":
 #    app.run(debug=False, host='0.0.0.0', port=5000)

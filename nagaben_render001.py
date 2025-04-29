@@ -54,14 +54,14 @@ def handle_message(event):
 
     if isinstance(event.message, TextMessage):
         input_text = event.message.text
-        print("input_message:", input_text)
+        print("input_message")
         dialect_text = kaiseki(input_text)
 
         reply = ReplyMessageRequest(
             reply_token=event.reply_token,
             messages=[TextMessage(text=dialect_text)]
         )
-        print("Replying:",reply)
+        print("Replying:")
         line_bot_api.reply_message(reply)
 
 #if __name__ == "__main__":

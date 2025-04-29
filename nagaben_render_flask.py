@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 import os
 from janome.tokenizer import Tokenizer
 
-# 環境変数をロード
+# 環境変数をロード 
 load_dotenv()
 
 LINE_CHANNEL_ACCESS_TOKEN = os.getenv("LINE_CHANNEL_ACCESS_TOKEN")

@@ -3,6 +3,7 @@ from linebot.v3.webhook import WebhookHandler, MessageEvent  # ←ここ
 from linebot.v3.messaging import MessagingApi, Configuration
 from linebot.v3.messaging.models import TextMessage, ReplyMessageRequest
 from linebot.v3.exceptions import InvalidSignatureError
+from linebot.v3.messaging.models import TextMessageContent  # ← 追加
 #from linebot.v3.exceptions import ApiException  # これが必要
 from dotenv import load_dotenv
 import os
@@ -55,9 +56,9 @@ def webhook():
 def handle_message(event):
     print(f"event={event}")  # ここを追加
 
-    if isinstance(event.message, TextMessage):
+    if isinstance(event.message, TextMessageContent):
         input_text = event.message.text
-        print("input_message")
+        print(f"input_text={input_text}")
         dialect_text = kaiseki(input_text)
 
         reply_request = ReplyMessageRequest(

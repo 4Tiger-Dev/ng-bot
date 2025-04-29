@@ -2,7 +2,8 @@ from flask import Flask, request, abort
 from linebot.v3.webhook import WebhookHandler, MessageEvent  # ←ここ
 from linebot.v3.messaging import MessagingApi, Configuration
 from linebot.v3.messaging.models import TextMessage, ReplyMessageRequest
-from linebot.v3.exceptions import InvalidSignatureError, LineBotApiError
+from linebot.v3.exceptions import InvalidSignatureError
+from linebot.v3.exceptions import ApiException  # これが必要
 from dotenv import load_dotenv
 import os
 from janome.tokenizer import Tokenizer
@@ -57,7 +58,7 @@ def handle_message(event):
     if isinstance(event.message, TextMessage):
         input_text = event.message.text
         print("input_message")
-        dialect_text = test(input_text)
+        dialect_text = kaiseki(input_text)
 
         reply_request = ReplyMessageRequest(
             reply_token=event.reply_token,
@@ -66,7 +67,7 @@ def handle_message(event):
         try:
             line_bot_api.reply_message_with_http_info(reply_request)
             print("Reply sent!")  # 成功したら出す
-        except LineBotApiError as e:
+        except ApiException as e:
             print(f"Reply failed: {e}")  # エラー内容だけ簡単にログ
 
 #if __name__ == "__main__":

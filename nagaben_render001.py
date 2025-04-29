@@ -1,4 +1,5 @@
-from flask import Flask, request, abort
+import flask
+from flask import Flask  # Flaskクラスを明示的にインポート
 from linebot.v3.webhook import WebhookHandler, MessageEvent  # ←ここ
 from linebot.v3.messaging import MessagingApi, Configuration
 from linebot.v3.messaging.models import ReplyMessageRequest
@@ -18,6 +19,8 @@ LINE_CHANNEL_SECRET = os.getenv("LINE_CHANNEL_SECRET")
 
 # Flaskアプリケーション
 app = Flask(__name__)
+print("Flask path:", flask.__file__)
+print("Flask version:", flask.__version__)
 
 # LINE Bot設定 (v3仕様)
 line_bot_api = None

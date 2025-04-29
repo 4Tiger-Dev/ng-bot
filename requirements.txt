@@ -1,5 +1,5 @@
-flask
-line-bot-sdk==3.0.0
+flask==3.1.0
+line-bot-sdk==3.17.1
 python-dotenv
 janome
 gunicorn

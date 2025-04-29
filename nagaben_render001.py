@@ -7,7 +7,8 @@ from janome.tokenizer import Tokenizer
 
 from linebot.v3.webhook import WebhookHandler, MessageEvent
 from linebot.v3.webhooks import TextMessageContent
-from linebot.v3.messaging import Configuration, MessagingApi
+from linebot.v3 import Configuration, ApiClient
+from linebot.v3.messaging import MessagingApi
 from linebot.v3.messaging.models import ReplyMessageRequest, TextMessage
 from linebot.v3.exceptions import InvalidSignatureError
 
@@ -36,8 +37,9 @@ def init_linebot():
 
     handler = WebhookHandler(LINE_CHANNEL_SECRET)
     configuration = Configuration(access_token=LINE_CHANNEL_ACCESS_TOKEN)
-    messaging_api = MessagingApi(configuration)
-
+    api_client = ApiClient(configuration)
+    messaging_api = MessagingApi(api_client)
+    
     @handler.add(MessageEvent)
     def handle_message(event):
         if isinstance(event.message, TextMessageContent):

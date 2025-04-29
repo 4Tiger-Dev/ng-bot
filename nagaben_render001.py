@@ -44,6 +44,7 @@ def init_linebot():
     @handler.add(MessageEvent)
     def handle_message(event):
         if isinstance(event.message, TextMessageContent):
+            print("Event has come!")
             input_text = event.message.text
             dialect_text = kaiseki(input_text)
 

@@ -42,7 +42,7 @@ def init_linebot():
     messaging_api = MessagingApi(api_client)
 
     # ファイルの先頭にグローバルで初期化
-    t = Tokenizer()
+    # t = Tokenizer()
 
     @handler.add(MessageEvent)
     def handle_message(event):
@@ -100,7 +100,7 @@ with open('connect_dict.txt', encoding='utf-8') as f:
 
 #　janome形態素解析での変換
 def convert_all(text):
-    # t = Tokenizer()　# グローバルに出した
+    t = Tokenizer() 
     tokens = list(t.tokenize(text, wakati=False))
 
     # 形態素解析の結果をtokens_infoリストに格納

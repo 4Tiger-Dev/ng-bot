@@ -24,6 +24,10 @@ handler = WebhookHandler(LINE_CHANNEL_SECRET)
 # 形態素解析器
 tokenizer = Tokenizer()
 
+def test(text):
+    return f"あなたが送ったのは「{text}」ですね！"
+    
+
 def kaiseki(text):
     result = []
     for token in tokenizer.tokenize(text):
@@ -55,7 +59,7 @@ def handle_message(event):
     if isinstance(event.message, TextMessage):
         input_text = event.message.text
         print("input_message")
-        dialect_text = kaiseki(input_text)
+        dialect_text = test(input_text)
 
         reply = ReplyMessageRequest(
             reply_token=event.reply_token,

@@ -41,6 +41,9 @@ def init_linebot():
     api_client = ApiClient(configuration)
     messaging_api = MessagingApi(api_client)
 
+    # ファイルの先頭にグローバルで初期化
+    t = Tokenizer()
+
     @handler.add(MessageEvent)
     def handle_message(event):
         if isinstance(event.message, TextMessageContent):
@@ -94,8 +97,6 @@ with open('connect_dict.txt', encoding='utf-8') as f:
             key, val = line.strip().split(' ', 1)
             connect_dict[key] = val
 
-# ファイルの先頭にグローバルで初期化
-t = Tokenizer()
 
 #　janome形態素解析での変換
 def convert_all(text):

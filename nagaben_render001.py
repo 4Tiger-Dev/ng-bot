@@ -50,6 +50,8 @@ def webhook():
 
 @handler.add(MessageEvent)
 def handle_message(event):
+    print("handle_message triggered!")  # ここを追加
+
     if isinstance(event.message, TextMessage):
         input_text = event.message.text
         dialect_text = kaiseki(input_text)
@@ -58,6 +60,7 @@ def handle_message(event):
             reply_token=event.reply_token,
             messages=[TextMessage(text=dialect_text)]
         )
+        print("Replying:",reply)
         line_bot_api.reply_message(reply)
 
 #if __name__ == "__main__":

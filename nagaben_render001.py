@@ -54,6 +54,7 @@ def handle_message(event):
 
     if isinstance(event.message, TextMessage):
         input_text = event.message.text
+        print("input_message:", input_text)
         dialect_text = kaiseki(input_text)
 
         reply = ReplyMessageRequest(

@@ -53,7 +53,7 @@ def webhook():
 
 @handler.add(MessageEvent)
 def handle_message(event):
-    print("handle_message triggered!")  # ここを追加
+    print(f"event={event}")  # ここを追加
 
     if isinstance(event.message, TextMessage):
         input_text = event.message.text

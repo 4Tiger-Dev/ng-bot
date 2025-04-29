@@ -51,7 +51,6 @@ def init_linebot():
                 reply_token=event.reply_token,
                 messages=[TextMessage(text=dialect_text)]
             )
-            print("ready to send reply")
             messaging_api.reply_message(reply_request)
 
 @app.before_first_request

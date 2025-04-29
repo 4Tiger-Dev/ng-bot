@@ -3,7 +3,7 @@ from linebot.v3.webhook import WebhookHandler, MessageEvent  # ←ここ
 from linebot.v3.messaging import MessagingApi, Configuration
 from linebot.v3.messaging.models import TextMessage, ReplyMessageRequest
 from linebot.v3.exceptions import InvalidSignatureError
-from linebot.v3.exceptions import ApiException  # これが必要
+#from linebot.v3.exceptions import ApiException  # これが必要
 from dotenv import load_dotenv
 import os
 from janome.tokenizer import Tokenizer
@@ -64,11 +64,8 @@ def handle_message(event):
             reply_token=event.reply_token,
             messages=[TextMessage(text=dialect_text)]
         )
-        try:
-            line_bot_api.reply_message_with_http_info(reply_request)
-            print("Reply sent!")  # 成功したら出す
-        except ApiException as e:
-            print(f"Reply failed: {e}")  # エラー内容だけ簡単にログ
-
+        print("ready to send reply")
+        line_bot_api.reply_message_with_http_info(reply_request)
+        
 #if __name__ == "__main__":
 #    app.run(debug=False, host='0.0.0.0', port=5000)

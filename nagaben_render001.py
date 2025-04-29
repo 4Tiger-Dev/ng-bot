@@ -78,9 +78,12 @@ def webhook():
 
     return 'OK'
 
+# ファイルの先頭にグローバルで初期化
+tokenizer = Tokenizer()
+
 # 形態素解析用関数
 def kaiseki(text):
-    tokenizer = Tokenizer()
+
     result = []
     for token in tokenizer.tokenize(text):
         surface = token.surface

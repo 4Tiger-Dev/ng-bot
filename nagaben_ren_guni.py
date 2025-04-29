@@ -49,7 +49,7 @@ def init_linebot():
         if isinstance(event.message, TextMessageContent):
             print("Event has come!!")
             input_text = event.message.text
-            dialect_text = kaiseki(input_text)
+            dialect_text = to_nagasaki_dialect(input_text)
 
             reply_request = ReplyMessageRequest(
                 reply_token=event.reply_token,

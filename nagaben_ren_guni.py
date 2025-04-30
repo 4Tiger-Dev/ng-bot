@@ -166,6 +166,16 @@ def convert_all(text):
             i += 2
             continue
 
+        # 名詞＋の
+        elif (
+            t1['pos'] == '名詞' and
+            t2.get('surface') == 'の' and
+            t2.get('pos') == '助詞'
+        ):
+            result.append(t1['surface'] + 'ん')
+            i += 2
+            continue
+
         # 動詞連用テ接続＋動詞（みる等）
         elif (
             t1['pos'] == '動詞' and

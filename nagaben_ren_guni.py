@@ -183,22 +183,22 @@ def convert_all(text):
             matched = None
             used = 0
 
-            if after_miru[:3] in connect_dict:  # まず3文字見る
-                matched = after_miru[:3]
-                used = 2  # t3, t4使用
-            elif after_miru[:2] in connect_dict:  # 次に2文字見る
-                matched = after_miru[:2]
-                used = 1  # t3使用
-            elif after_miru[:1] in connect_dict:  # 最後に1文字
-                matched = after_miru[:1]
-                used = 0  # t3のみ使用
+            for key in sorted(connect_dict.keys(), key=lambda x: -len(x)):
+                if after_miru.startswith(key):
+                    matched = key
+                    used = 0
+                    if t4 and key.startswith(t3['surface'] + t4['surface']):
+                        used = 1
+                    if t5 and key.startswith(t3['surface'] + t4['surface'] + t5['surface']):
+                        used = 2
+                    break
 
             if matched:
                 result.append(base + 'て' + connect_dict[matched])
                 i += 3 + used
                 continue
             else:
-                result.append(base + 'て'+ t3['surface'])  # デフォルト
+                result.append(base + 'て' + t3['surface'])  # デフォルト
                 i += 3
             continue
 

@@ -141,7 +141,7 @@ def convert_all(text):
             i += 2
             continue
 
-        # 動詞＋た
+        # 動詞（基本形語末う＋た　例　拾った
         elif (
             t1['pos'] == '動詞' and
             t1['conj_form'] == '連用タ接続' and
@@ -166,7 +166,7 @@ def convert_all(text):
             i += 2
             continue
 
-        # 動詞連用テ接続＋みる
+        # 動詞連用テ接続＋動詞（みる等）
         elif (
             t1['pos'] == '動詞' and
             t2.get('surface') == 'て' and
@@ -198,7 +198,7 @@ def convert_all(text):
                 i += 3 + used
                 continue
             else:
-                result.append(base + 'てむっ')  # デフォルト
+                result.append(base + 'て'+ t3['surface'])  # デフォルト
                 i += 3
             continue
 

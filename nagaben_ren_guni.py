@@ -273,7 +273,7 @@ def to_nagasaki_dialect(text):
     # ステップ4：形態素解析＋ルール変換（convert_all）
     text = convert_all(text)
     # ステップ5：「～を」→「～ば」
-    text = re.sub(r'([\wぁ-んァ-ン一-龥]+)を', r'\1ば', text)
+    #text = re.sub(r'([\wぁ-んァ-ン一-龥]+)を', r'\1ば', text)
     # ステップ6：最終的に [[...]] を除去
     text = re.sub(r'\[\[(.*?)\]\]', r'\1', text)
 

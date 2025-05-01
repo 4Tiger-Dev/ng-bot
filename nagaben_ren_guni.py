@@ -23,39 +23,39 @@ app = Flask(__name__)
 # print("Flask path:", flask.__file__)
 # print("Flask version:", flask.__version__)
 
-# LINE Bot SDK 遅延初期化用
-handler = None
+# グローバルで定義
+handler = WebhookHandler(os.getenv("LINE_CHANNEL_SECRET"))
 messaging_api = None
+
+
+@handler.add(MessageEvent)
+def handle_message(event):
+    if isinstance(event.message, TextMessageContent):
+        print("Event has come!!")
+        input_text = event.message.text
+        dialect_text = to_nagasaki_dialect(input_text)
+
+        reply_request = ReplyMessageRequest(
+            reply_token=event.reply_token,
+            messages=[TextMessage(text=dialect_text)]
+        )
+        messaging_api.reply_message(reply_request)
+
+# ファイルの先頭にグローバルで初期化
+t = Tokenizer()
 
 def init_linebot():
     global handler, messaging_api
 
-    if handler is not None and messaging_api is not None:
+    if messaging_api is not None:
         return  # すでに初期化済み
 
-    LINE_CHANNEL_SECRET = os.getenv("LINE_CHANNEL_SECRET")
     LINE_CHANNEL_ACCESS_TOKEN = os.getenv("LINE_CHANNEL_ACCESS_TOKEN")
 
-    handler = WebhookHandler(LINE_CHANNEL_SECRET)
     configuration = Configuration(access_token=LINE_CHANNEL_ACCESS_TOKEN)
     api_client = ApiClient(configuration)
     messaging_api = MessagingApi(api_client)
 
-    # ファイルの先頭にグローバルで初期化
-    # t = Tokenizer()
-
-    @handler.add(MessageEvent)
-    def handle_message(event):
-        if isinstance(event.message, TextMessageContent):
-            print("Event has come!!")
-            input_text = event.message.text
-            dialect_text = to_nagasaki_dialect(input_text)
-
-            reply_request = ReplyMessageRequest(
-                reply_token=event.reply_token,
-                messages=[TextMessage(text=dialect_text)]
-            )
-            messaging_api.reply_message(reply_request)
 
 @app.before_first_request
 def startup():
@@ -100,7 +100,6 @@ with open('connect_dict.txt', encoding='utf-8') as f:
 
 #　janome形態素解析での変換
 def convert_all(text):
-    t = Tokenizer() 
     tokens = list(t.tokenize(text, wakati=False))
 
     # 形態素解析の結果をtokens_infoリストに格納
@@ -119,17 +118,18 @@ def convert_all(text):
     i = 0
     while i < len(tokens_info):
         t1 = tokens_info[i]
-        t2 = tokens_info[i+1] if i+1 < len(tokens_info) else {}
-        t3 = tokens_info[i+2] if i+2 < len(tokens_info) else {}
-        t4 = tokens_info[i+3] if i+3 < len(tokens_info) else {}
-        t5 = tokens_info[i+4] if i+4 < len(tokens_info) else {}
+        if t1['surface'].startswith('[[') and t1['surface'].endswith(']]'):
+            result.append(t1['surface'])
+            i += 1
+            continue
 
         # 否定形
         if (
+            i + 1 < len(tokens_info) and
             t1['pos'] == '動詞' and
             t1['conj_form'] == '未然形' and
-            t2.get('surface') == 'ない' and
-            t2.get('pos') == '助動詞'
+            tokens_info[i+1].get('surface') == 'ない' and
+            tokens_info[i+1].get('pos') == '助動詞'
         ):
             base = t1['base']
             if base == 'する':
@@ -143,10 +143,11 @@ def convert_all(text):
 
         # 動詞（基本形語末う＋た　例　拾った
         elif (
+            i + 1 < len(tokens_info) and
             t1['pos'] == '動詞' and
             t1['conj_form'] == '連用タ接続' and
-            t2.get('surface') == 'た' and
-            t2.get('pos') == '助動詞'
+            tokens_info[i+1].get('surface') == 'た' and
+            tokens_info[i+1].get('pos') == '助動詞'
         ):
             base = t1['base']
             if base.endswith('う'):
@@ -158,9 +159,10 @@ def convert_all(text):
 
         # 名詞＋が
         elif (
+            i + 1 < len(tokens_info) and
             t1['pos'] == '名詞' and
-            t2.get('surface') == 'が' and
-            t2.get('pos') == '助詞'
+            tokens_info[i+1].get('surface') == 'が' and
+            tokens_info[i+1].get('pos') == '助詞'
         ):
             result.append(t1['surface'] + 'の')
             i += 2
@@ -168,9 +170,10 @@ def convert_all(text):
 
         # 名詞＋の
         elif (
+            i + 1 < len(tokens_info) and
             t1['pos'] == '名詞' and
-            t2.get('surface') == 'の' and
-            t2.get('pos') == '助詞'
+            tokens_info[i+1].get('surface') == 'の' and
+            tokens_info[i+1].get('pos') == '助詞'
         ):
             result.append(t1['surface'] + 'ん')
             i += 2
@@ -178,17 +181,18 @@ def convert_all(text):
 
         # 動詞連用テ接続＋動詞（みる等）
         elif (
+            i + 2 < len(tokens_info) and
             t1['pos'] == '動詞' and
-            t2.get('surface') == 'て' and
-            t2.get('pos') == '助詞' and
-            t3.get('pos') == '動詞'
+            tokens_info[i+1].get('surface') == 'て' and
+            tokens_info[i+1].get('pos') == '助詞' and
+            tokens_info[i+2].get('pos') == '動詞'
         ):
             base = t1['surface']
 
             # 「みる」以降を連結して辞書マッチング
-            after_miru = t3['surface']
-            if t4: after_miru += t4['surface']
-            if t5: after_miru += t5['surface']
+            after_miru = tokens_info[i+2]['surface']
+            if i+3 < len(tokens_info): after_miru += tokens_info[i+3]['surface']
+            if i+4 < len(tokens_info): after_miru += tokens_info[i+4]['surface']
 
             matched = None
             used = 0
@@ -197,9 +201,9 @@ def convert_all(text):
                 if after_miru.startswith(key):
                     matched = key
                     used = 0
-                    if t4 and key.startswith(t3['surface'] + t4['surface']):
+                    if i+3 < len(tokens_info) and key.startswith(tokens_info[i+2]['surface'] + tokens_info[i+3]['surface']):
                         used = 1
-                    if t5 and key.startswith(t3['surface'] + t4['surface'] + t5['surface']):
+                    if i+4 < len(tokens_info)and key.startswith(tokens_info[i+2]['surface'] + tokens_info[i+3]['surface'] +  tokens_info[i+4]['surface']):
                         used = 2
                     break
 
@@ -208,14 +212,14 @@ def convert_all(text):
                 i += 3 + used
                 continue
             else:
-                result.append(base + 'て' + t3['surface'])  # デフォルト
+                result.append(base + 'て' + tokens_info[i+2]['surface'])  # デフォルト
                 i += 3
             continue
 
          # 形容詞語尾い + から　→ かけん
-        elif (t1['pos'] == '形容詞' and t1['surface'].endswith('い') and t2.get('surface') == 'から'):
+        elif (t1['pos'] == '形容詞' and t1['surface'].endswith('い') and tokens_info[i+1].get('surface') == 'から'):
             
-            if not any(t1['surface'].endswith(suffix) for suffix in ['ばい', 'たい', 'ない']):
+            if not t1['surface'].endswith(('ばい', 'たい', 'ない')):
                 result.append(t1['surface'][:-1] + 'かけん')
             else:
                 result.append(t1['surface'])
@@ -224,7 +228,7 @@ def convert_all(text):
             
        # 形容詞語尾い → か
         elif t1['pos'] == '形容詞' and t1['surface'].endswith('い'):
-            if not any(t1['surface'].endswith(suffix) for suffix in ['ばい', 'たい', 'ない']):
+            if not t1['surface'].endswith(('ばい', 'たい', 'ない')):
                 result.append(t1['surface'][:-1] + 'か')
             else:
                 result.append(t1['surface'])
@@ -248,36 +252,30 @@ def convert_all(text):
 
 # 長崎弁変換エンジン
 def to_nagasaki_dialect(text):
-    text = re.sub(r'(?<![\wぁ-んァ-ン一-龥])しない(?=[をがにのはへとで])', '[[せん]]', text)
+    # ステップ1：辞書変換前に [[...]] を保護    
+        
+    protected = []
 
-    def dict_replace(text):
-        protected = []
-        def protect(match):
-            protected.append(match.group(0))
-            return f"__PROTECTED_{len(protected)-1}__"
-
-        text = re.sub(r'\[\[.*?\]\]', protect, text)
-
-        for std in sorted(dialect_dict, key=len, reverse=True):
-            text = re.sub(re.escape(std), f'[[{dialect_dict[std]}]]', text)
-
-        for i, original in enumerate(protected):
-            text = text.replace(f"__PROTECTED_{i}__", original)
-
-        return text
-
-    text = dict_replace(text)
-    text = convert_all(text)
-    text = re.sub(r'([\wぁ-んァ-ン一-龥]+)を', r'\1ば', text)
-
-    protected = {}
     def protect(match):
-        key = f"__PROTECTED_{len(protected)}__"
-        protected[key] = match.group(0)
-        return key
+        protected.append(match.group(0))
+        return f"__PROTECTED_{len(protected)-1}__"
+
     text = re.sub(r'\[\[.*?\]\]', protect, text)
 
-    for key, val in protected.items():
-        text = text.replace(key, val)
-    text = text.replace('[[', '').replace(']]', '')
+    # ステップ2：辞書マッチング
+    for std in sorted(dialect_dict, key=len, reverse=True):
+        text = re.sub(re.escape(std), f'[[{dialect_dict[std]}]]', text)
+
+    # ステップ3：一時保護部分を復元
+    for i, original in enumerate(protected):
+        text = text.replace(f"__PROTECTED_{i}__", original)
+
+    # ステップ4：形態素解析＋ルール変換（convert_all）
+    text = convert_all(text)
+    # ステップ5：「～を」→「～ば」
+    text = re.sub(r'([\wぁ-んァ-ン一-龥]+)を', r'\1ば', text)
+    # ステップ6：最終的に [[...]] を除去
+    text = re.sub(r'\[\[(.*?)\]\]', r'\1', text)
+
     return text
+

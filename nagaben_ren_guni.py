@@ -79,30 +79,6 @@ def webhook():
 
     return 'OK'
 
-# ファイルの先頭にグローバルで初期化
-t = Tokenizer()
-
-# 長崎弁辞書の読み込み 
-dialect_dict = {}
-with open('batten_utf8.txt', encoding='utf-8') as f:
-    for line in f:
-        if ' ' in line:
-            key, val = line.strip().split(' ', 1)
-            dialect_dict[key] = val
-
-# 最大キー長を求める（辞書マッチ範囲）
-MAX_DICT_LEN = max(len(k) for k in dialect_dict)
-
-
-# 連結辞書の読み込み（新規）
-connect_dict = {}
-with open('connect_dict.txt', encoding='utf-8') as f:
-    for line in f:
-        if ' ' in line:
-            key, val = line.strip().split(' ', 1)
-            connect_dict[key] = val
-
-
 #　janome形態素解析での変換
 def convert_token(text):
     tokens = list(t.tokenize(text, wakati=False))
@@ -114,10 +90,10 @@ def convert_token(text):
     # 形態素解析の結果をtokens_infoリストに格納
     tokens_info = [
         {
-            'surface': token.surface,
-            'pos': token.part_of_speech.split(',')[0],
-            'base': token.base_form,
-            'conj_form': token.infl_form  # ←追加
+            'surface': token.surface, # 表層形
+            'pos': token.part_of_speech.split(',')[0], # 品詞
+            'base': token.base_form, # 基本形
+            'conj_form': token.infl_form  # 活用形
         } for token in tokens
     ]
 
@@ -186,6 +162,22 @@ def convert_token(text):
         
         return converted, len(surface_used)
     
+        # 動詞 基本形 + から　→ けん 　例　走るから　→　走るけん
+    elif (
+        len(tokens_info) >= 2 and
+        tokens_info[0]['pos'] == '動詞' and 
+        tokens_info[0]['conj_form'] == '基本形' and 
+        tokens_info[1].get('surface') == 'から' 
+    ):
+        
+        # 変換前の文字数を数えるため　変換前文を収納
+        surface_used = tokens_info[0]['surface'] + tokens_info[1]['surface']
+       
+        converted = tokens_info[0]['surface'] +'けん'
+        
+        return converted, len(surface_used)
+
+
     # 否定形
     elif (
         len(tokens_info) >= 2 and
@@ -257,7 +249,21 @@ def convert_token(text):
         
         return converted, len(surface_used)
         
-
+    # 動詞連用形 + たい　→ たか 例　会いたい　→　会いたか
+    elif (
+        len(tokens_info) >= 2 and
+        tokens_info[0]['pos'] == '動詞' and 
+        tokens_info[0]['conj_form'] == '連用形' and 
+        tokens_info[1].get('surface') == 'たい'
+    ):
+        
+        # 変換前の文字数を数えるため　変換前文を収納
+        surface_used = tokens_info[0]['surface'] + tokens_info[1]['surface']
+       
+        converted = tokens_info[0]['surface']+ tokens_info[1]['surface'][:-1]+'か'
+        
+        return converted, len(surface_used)
+        
     # 名詞＋の　男の→男ん　
     elif (
         len(tokens_info) >= 2 and
@@ -272,6 +278,7 @@ def convert_token(text):
         
         return converted, len(surface_used)
 
+
     # 形容詞語尾い → か
     elif (
         tokens_info[0]['pos'] == '形容詞' and 
@@ -280,6 +287,17 @@ def convert_token(text):
         # 変換前の文字数を数えるため　変換前文を収納
         surface_used = tokens_info[0]['surface']
         converted = tokens_info[0]['surface'][:-1]+'か'
+
+        return converted, len(surface_used)
+    
+    # 形容詞語尾く → う
+    elif (
+        tokens_info[0]['pos'] == '形容詞' and 
+        tokens_info[0]['surface'].endswith('く')
+    ):
+        # 変換前の文字数を数えるため　変換前文を収納
+        surface_used = tokens_info[0]['surface']
+        converted = tokens_info[0]['surface'][:-1]+'う'
 
         return converted, len(surface_used)
    

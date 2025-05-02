@@ -79,6 +79,27 @@ def webhook():
 
     return 'OK'
 
+# 長崎弁辞書の読み込み 
+dialect_dict = {}
+with open('batten_utf8.txt', encoding='utf-8') as f:
+    for line in f:
+        if ' ' in line:
+            key, val = line.strip().split(' ', 1)
+            dialect_dict[key] = val
+
+# 最大キー長を求める（辞書マッチ範囲）
+MAX_DICT_LEN = max(len(k) for k in dialect_dict)
+
+
+# 連結辞書の読み込み（新規）
+connect_dict = {}
+with open('connect_dict.txt', encoding='utf-8') as f:
+    for line in f:
+        if ' ' in line:
+            key, val = line.strip().split(' ', 1)
+            connect_dict[key] = val
+
+
 #　janome形態素解析での変換
 def convert_token(text):
     tokens = list(t.tokenize(text, wakati=False))

@@ -16,6 +16,10 @@ from linebot.v3.exceptions import InvalidSignatureError
 # 環境変数を読み込み
 load_dotenv()
 
+
+LINE_CHANNEL_ACCESS_TOKEN = os.getenv("LINE_CHANNEL_ACCESS_TOKEN")
+LINE_CHANNEL_SECRET = os.getenv("LINE_CHANNEL_SECRET")
+
 # Flaskアプリケーション
 app = Flask(__name__)
 
@@ -23,9 +27,13 @@ app = Flask(__name__)
 # print("Flask path:", flask.__file__)
 # print("Flask version:", flask.__version__)
 
+# LINE Bot設定 (v3仕様)
 # グローバルで定義
-handler = WebhookHandler(os.getenv("LINE_CHANNEL_SECRET"))
-messaging_api = None
+configuration = Configuration(access_token=LINE_CHANNEL_ACCESS_TOKEN)
+messaging_api = MessagingApi(configuration)
+handler = WebhookHandler(LINE_CHANNEL_SECRET)
+
+
 
 
 @handler.add(MessageEvent)
@@ -42,24 +50,6 @@ def handle_message(event):
         messaging_api.reply_message(reply_request)
 
 
-def init_linebot():
-    global handler, messaging_api
-
-    if messaging_api is not None:
-        return  # すでに初期化済み
-
-    LINE_CHANNEL_ACCESS_TOKEN = os.getenv("LINE_CHANNEL_ACCESS_TOKEN")
-
-    configuration = Configuration(access_token=LINE_CHANNEL_ACCESS_TOKEN)
-    api_client = ApiClient(configuration)
-    messaging_api = MessagingApi(api_client)
-
-
-@app.before_first_request
-def startup():
-    print("Initializing LINE Bot handler...")
-    init_linebot()
-
 # トップページ
 @app.route('/')
 def home():
@@ -68,7 +58,6 @@ def home():
 # Webhook エンドポイント
 @app.route('/webhook', methods=['POST'])
 def webhook():
-    init_linebot()  # 念のため再確認
     signature = request.headers.get('X-Line-Signature')
     body = request.get_data(as_text=True)
 

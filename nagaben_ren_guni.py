@@ -151,10 +151,23 @@ def convert_token(text):
 
         if matched_key:
             converted = base + 'て' + connect_dict[matched_key]
-            consumed_len = len(surface_used)
+            # matched_key に該当するトークンだけの表層文字列の長さを合計
+            matched_surface_len = 0
+            remaining = matched_key
+            for i in range(2, 2 + used_tokens):
+                token_surface = tokens_info[i]['surface']
+                if remaining.startswith(token_surface):
+                    matched_surface_len += len(token_surface)
+                    remaining = remaining[len(token_surface):]
+                    if not remaining:
+                        break
+                else:
+                    if token_surface.startswith(remaining):
+                        matched_surface_len += len(remaining)
+                        break
+
+            consumed_len = len(base) + len('て') + matched_surface_len
             return converted, consumed_len
-        else:
-            return surface_used, len(surface_used)
 
 
     # 動詞＋から　→けん　　例　走ったから　→　走ったけん
@@ -315,5 +328,3 @@ def to_nagasaki_dialect(text):
             result += text[i]
             i += 1    
     return result
-
-

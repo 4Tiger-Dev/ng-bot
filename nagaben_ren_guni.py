@@ -88,6 +88,8 @@ with open('connect_dict.txt', encoding='utf-8') as f:
             key, val = line.strip().split(' ', 1)
             connect_dict[key] = val
 
+# 形態素解析器
+t = Tokenizer()
 
 #　janome形態素解析での変換
 def convert_token(text):

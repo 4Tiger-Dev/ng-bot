@@ -29,11 +29,10 @@ app = Flask(__name__)
 
 # LINE Bot設定 (v3仕様)
 # グローバルで定義
-configuration = Configuration(access_token=LINE_CHANNEL_ACCESS_TOKEN)
-messaging_api = MessagingApi(configuration)
 handler = WebhookHandler(LINE_CHANNEL_SECRET)
-
-
+configuration = Configuration(access_token=LINE_CHANNEL_ACCESS_TOKEN)
+api_client = ApiClient(configuration)
+messaging_api = MessagingApi(api_client)
 
 
 @handler.add(MessageEvent)

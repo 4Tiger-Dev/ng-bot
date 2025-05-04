@@ -40,7 +40,16 @@ def handle_message(event):
     if isinstance(event.message, TextMessageContent):
         print("Event has come!!")
         input_text = event.message.text
-        dialect_text = to_nagasaki_dialect(input_text)
+        # 形態素解析リクエスト
+        if input_text[0] == "*":
+            # 形態素解析実行
+            for token in t.tokenize(input_text):
+                surface = token.surface
+                part_of_speech = token.part_of_speech
+                dialect_text = (f"【解析結果】\n{surface}\t{part_of_speech,token.base_form,token.infl_form,token.infl_type}")
+        
+        else:
+            dialect_text = to_nagasaki_dialect(input_text)
 
         reply_request = ReplyMessageRequest(
             reply_token=event.reply_token,
@@ -173,7 +182,37 @@ def convert_token(text):
         
         return converted, len(surface_used)
     
-        # 動詞 基本形 + から　→ けん 　例　走るから　→　走るけん
+    # 形容詞＋んだ　→だと　例　痛いんだ　→　痛かと　痛いんだと→痛かとて　痛いんじゃ→痛かとじゃ
+    elif (
+        len(tokens_info) >= 3  and
+        tokens_info[0]['pos'] == '形容詞' and
+        tokens_info[0].get('surface').endswith('い') and
+        tokens_info[1].get('surface') == 'ん' and
+        tokens_info[2].get('surface') in ('だ','じゃ')
+    ):
+    
+        # 変換前の文字数を数えるため　変換前文を収納
+        surface_used = tokens_info[0]['surface'] + tokens_info[1]['surface'] + tokens_info[2]['surface']
+        # 痛いんだと
+        if (
+            len(tokens_info) >= 4 and
+            tokens_info[2].get('surface') == 'だ' and
+            tokens_info[3].get('surface') == 'と'
+        ):
+            surface_used = surface_used + tokens_info[3]['surface']
+            converted = tokens_info[0]['surface'][:-1] + 'かとて'
+        # 痛いんじゃ
+        elif (
+            tokens_info[2].get('surface') == 'じゃ'
+        ):
+            converted = tokens_info[0]['surface'][:-1] + 'かとじゃ'
+        # 痛いんだ
+        else:
+            converted = tokens_info[0]['surface'][:-1] + 'かと'
+
+        return converted, len(surface_used)
+    
+    # 動詞 基本形 + から　→ けん 　例　走るから　→　走るけん
     elif (
         len(tokens_info) >= 2 and
         tokens_info[0]['pos'] == '動詞' and 

@@ -44,10 +44,10 @@ def handle_message(event):
         if input_text[0] == "*":
             # 形態素解析実行
             dialect_text = f"【解析結果】\n"
-            for token in t.tokenize(input_text):
+            for token in t.tokenize(input_text[1:]):
                     surface = token.surface
                     part_of_speech = token.part_of_speech
-                    dialect_text = dialect_text + (f"{surface}\t{part_of_speech,token.base_form,token.infl_form,token.infl_type}")
+                    dialect_text = dialect_text + (f"{surface}{part_of_speech,token.base_form,token.infl_form,token.infl_type}\n")
             
         else:
             dialect_text = to_nagasaki_dialect(input_text)

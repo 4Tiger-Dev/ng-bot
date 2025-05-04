@@ -182,6 +182,21 @@ def convert_token(text):
         converted = tokens_info[0]['surface'] + tokens_info[1]['surface'] +'けん'
         
         return converted, len(surface_used)
+    # 動詞＋なく＋て　→らんで　　例　走らなくて　→　走らんで
+    elif (
+        len(tokens_info) >= 3  and
+        tokens_info[0]['pos'] == '動詞' and
+        tokens_info[1].get('surface') == ('なく') and
+        tokens_info[2].get('surface') == 'て'
+    ):
+    
+        # 変換前の文字数を数えるため　変換前文を収納
+        surface_used = tokens_info[0]['surface'] + tokens_info[1]['surface'] + tokens_info[2]['surface']
+       
+        converted = tokens_info[0]['surface'] + 'んで'
+        
+        return converted, len(surface_used)
+    
     
     # 形容詞＋んだ　→だと　例　痛いんだ　→　痛かと　痛いんだと→痛かとて　痛いんじゃ→痛かとじゃ
     elif (
@@ -189,7 +204,7 @@ def convert_token(text):
         tokens_info[0]['pos'] == '形容詞' and
         tokens_info[0].get('surface').endswith('い') and
         tokens_info[1].get('surface') == 'ん' and
-        tokens_info[2].get('surface') in ('だ','じゃ')
+        tokens_info[2].get('surface') in ('だ','じゃ','だって')
     ):
     
         # 変換前の文字数を数えるため　変換前文を収納
@@ -207,6 +222,11 @@ def convert_token(text):
             tokens_info[2].get('surface') == 'じゃ'
         ):
             converted = tokens_info[0]['surface'][:-1] + 'かとじゃ'
+        # 痛いんだって
+        elif (
+            tokens_info[2].get('surface') == 'だって'
+        ):
+            converted = tokens_info[0]['surface'][:-1] + 'かとって'
         # 痛いんだ
         else:
             converted = tokens_info[0]['surface'][:-1] + 'かと'

@@ -353,6 +353,8 @@ def convert_token(text):
     # 形容詞語尾い → か
     elif (
         tokens_info[0]['pos'] == '形容詞' and 
+        tokens_info[0]['conj_form'] == '基本形' and 
+        tokens_info[0]['surface'] != 'くらい' and
         tokens_info[0]['surface'].endswith('い')
     ):
         # 変換前の文字数を数えるため　変換前文を収納
